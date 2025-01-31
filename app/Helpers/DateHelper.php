@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Helpers;
+
+class DateHelper
+{
+    /**
+     * Renvoie un tableau des mois en français.
+     *
+     * @return array
+     */
+    public static function getMoisFrancais(): array
+    {
+        return [
+            1 => 'Janvier',
+            2 => 'Février',
+            3 => 'Mars',
+            4 => 'Avril',
+            5 => 'Mai',
+            6 => 'Juin',
+            7 => 'Juillet',
+            8 => 'Août',
+            9 => 'Septembre',
+            10 => 'Octobre',
+            11 => 'Novembre',
+            12 => 'Décembre',
+        ];
+    }
+}

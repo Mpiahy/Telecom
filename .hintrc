@@ -1,0 +1,30 @@
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "compat-api/css": [
+      "default",
+      {
+        "ignore": [
+          "-webkit-text-size-adjust",
+          "text-align: -webkit-match-parent",
+          "-webkit-overflow-scrolling",
+          "print-color-adjust"
+        ]
+      }
+    ],
+    "css-prefix-order": "off",
+    "detect-css-reflows/paint": "off",
+    "detect-css-reflows/composite": "off"
+  },
+  "browserslist": [
+    "defaults",
+    "not ie 11",
+    "not and_chr <= 126",
+    "not chrome <= 126",
+    "not edge <= 126",
+    "not opera <= 111",
+    "not samsung <= 25"
+  ]
+}
