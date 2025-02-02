@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('login')->unique();
             $table->string('email')->unique();
             $table->string('password');
+            $table->string('temp_password')->nullable();
             $table->string('nom_usr');
             $table->string('prenom_usr');
             $table->boolean('isAdmin')->default(false);

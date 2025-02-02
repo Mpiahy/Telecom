@@ -9,6 +9,35 @@
     label {
         color: #0a4866 !important; /* Appliquer le style globalement */
     }
+
+    :root {
+        --bs-primary: #0B4865 !important;
+        --bs-primary-rgb: 10, 72, 102 !important;
+        }
+
+        .btn-primary, .bg-primary, .btn-outline-primary {
+            background-color: #0B4865 !important;
+            border-color: #0B4865 !important;
+            color: white !important;
+        }
+
+        .btn-primary:hover, .btn-outline-primary:hover {
+            background-color: #083a52 !important; /* Teinte plus foncée au survol */
+            border-color: #083a52 !important;
+        }
+
+        .text-primary {
+            color: #0B4865 !important;
+        }
+
+        .btn-outline-primary {
+            color: #0B4865 !important;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #0B4865 !important;
+            color: white !important;
+        }
 </style>    
 
 @section('content_index')
@@ -129,19 +158,19 @@
                         @csrf
                         <div class="mb-3">
                             <label for="older_pwd" class="form-label fw-bold">Ancien mot de passe</label>
-                            <input required id="older_pwd" class="form-control @error('older_pwd') is-invalid @enderror" type="password" placeholder="Entrez votre ancien mot de passe" name="older_pwd">
+                            <input value="{{ old('older_pwd') }}" required id="older_pwd" class="form-control @error('older_pwd') is-invalid @enderror" type="password" placeholder="Entrez votre ancien mot de passe" name="older_pwd">
                             @error('older_pwd') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">
                             <label for="new_pwd" class="form-label fw-bold">Nouveau mot de passe</label>
-                            <input required id="new_pwd" class="form-control @error('new_pwd') is-invalid @enderror" type="password" placeholder="Entrez votre nouveau mot de passe" name="new_pwd">
+                            <input value="{{ old('new_pwd') }}" required id="new_pwd" class="form-control @error('new_pwd') is-invalid @enderror" type="password" placeholder="Entrez votre nouveau mot de passe" name="new_pwd">
                             @error('new_pwd') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">
                             <label for="new_pwd_confirmation" class="form-label fw-bold">Confirmer votre mot de passe</label>
-                            <input required id="new_pwd_confirmation" class="form-control @error('new_pwd') is-invalid @enderror" type="password" placeholder="Confirmez votre nouveau mot de passe" name="new_pwd_confirmation">
+                            <input value="{{ old('new_pwd_confirmation') }}" required id="new_pwd_confirmation" class="form-control @error('new_pwd') is-invalid @enderror" type="password" placeholder="Confirmez votre nouveau mot de passe" name="new_pwd_confirmation">
                             @error('new_pwd') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 

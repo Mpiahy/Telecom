@@ -128,6 +128,13 @@
             </footer>
         </div><a class="border rounded d-inline scroll-to-top" href="#page-top"><i class="fas fa-angle-up"></i></a>
     </div>
+
+    {{-- MODALS --}}
+    @yield('modals')
+    
+    {{-- SCRIPTS --}}
+    @yield('scripts')
+    
     <script src="{{asset('/assets/bootstrap/js/bootstrap.min.js')}}"></script>
     <script src="{{asset('/assets/js/chart.min.js')}}"></script>
     <script src="{{asset('/assets/js/bs-init.js')}}"></script>

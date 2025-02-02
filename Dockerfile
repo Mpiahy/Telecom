@@ -5,7 +5,10 @@ FROM php:8.2-apache as web
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     libpq-dev \
-    zip
+    zip \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -14,7 +17,9 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN a2enmod rewrite
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_pgsql 
+RUN docker-php-ext-install pdo_pgsql bcmath zip
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+RUN docker-php-ext-install -j$(nproc) gd
 
 # Configure Apache DocumentRoot to point to Laravel's public directory
 # and update Apache configuration files
@@ -30,6 +35,9 @@ WORKDIR /var/www/html
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Allow Composer to run as root/super user
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Install project dependencies
 RUN composer install

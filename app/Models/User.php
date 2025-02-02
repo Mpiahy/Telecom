@@ -13,7 +13,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['login', 'email', 'password', 'nom_usr', 'prenom_usr', 'isAdmin']; // Ajout de isAdmin
+    protected $fillable = ['login', 'email', 'password', 'nom_usr', 'prenom_usr', 'isAdmin', 'temp_password'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -49,16 +49,17 @@ class User extends Authenticatable
     public function updatePassword(string $newPassword)
     {
         try {
-            // Mettre à jour le mot de passe en le hachant
+            // Mettre à jour le mot de passe en le hachant et effacer temp_password
             $this->update([
                 'password' => Hash::make($newPassword),
+                'temp_password' => null  // Effacer le mot de passe temporaire
             ]);
-
+    
             return true;
         } catch (Exception $e) {
             return $e->getMessage(); // Retourner le message d'erreur en cas de problème
         }
-    }
+    }    
 
     public function toggleAdmin()
     {

@@ -3,9 +3,38 @@
 <head>
     <title>Comptes - Telecom</title>
     <style>
+        :root {
+        --bs-primary: #0B4865 !important;
+        --bs-primary-rgb: 10, 72, 102 !important;
+        }
+
+        .btn-primary, .bg-primary, .btn-outline-primary {
+            background-color: #0B4865 !important;
+            border-color: #0B4865 !important;
+            color: white !important;
+        }
+
+        .btn-primary:hover, .btn-outline-primary:hover {
+            background-color: #083a52 !important; /* Teinte plus foncée au survol */
+            border-color: #083a52 !important;
+        }
+
+        .text-primary {
+            color: #0B4865 !important;
+        }
+
+        .btn-outline-primary {
+            color: #0B4865 !important;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #0B4865 !important;
+            color: white !important;
+        }
+
         /* Style général */
         label, td, .input-group-text {
-            color: #0a4866 !important;
+            color: #0B4865 !important;
         }
 
         /* Design de la table */
@@ -15,7 +44,7 @@
         }
 
         .table thead {
-            background-color: #0a4866;
+            background-color: #0B4865;
             color: white;
         }
 
@@ -41,25 +70,18 @@
     <div class="text-center mb-4">
         <a class="btn btn-primary btn-icon-split" role="button" data-bs-target="#modal_add_account" data-bs-toggle="modal">
             <span class="icon">
-                <i class="fas fa-plus-circle"></i>
+                <i class="fas fa-plus-circle" style="padding-top: 5px;"></i>
             </span>
-            <span class="text">Ajouter un compte</span>
+            <span class="text">Créer un compte</span>
         </a>
     </div>
 
     <div class="card shadow">
         <div class="card-header py-3">
-            <p class="m-0 fw-bold" style="color: #0a4866;">Comptes</p>
+            <p class="m-0 fw-bold" style="color: #0B4865;">Comptes</p>
         </div>
         <div class="card-body">
             <div class="row mt-2">
-                <div class="col">
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-outline-primary active">Tout</button>
-                        <button class="btn btn-outline-primary">Admin</button>
-                        <button class="btn btn-outline-primary">Invité</button>
-                    </div>
-                </div>
                 <div class="col">
                     <form action="search_account">
                         <div class="input-group">
@@ -75,8 +97,8 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Nom et Prénom(s)</th>
                             <th>Login</th>
+                            <th>Nom et Prénom(s)</th>
                             <th>Email</th>
                             <th>Accès</th>
                             <th class="text-center">Action</th>
@@ -85,14 +107,14 @@
                     <tbody>
                         @foreach ($accounts as $account)
                         <tr id="row-{{ $account->id }}">
-                            <td>{{ $account->nom_usr }} {{ $account->prenom_usr }}</td>
                             <td>{{ $account->login }}</td>
+                            <td>{{ $account->nom_usr }} {{ $account->prenom_usr }}</td>
                             <td>{{ $account->email }}</td>
-                            <td id="type-{{ $account->id }}">{{ $account->isAdmin ? 'Admin' : 'Invité' }}</td>
+                            <td id="type-{{ $account->id }}" class="text-primary fw-bold" style="cursor: pointer;" onclick="toggleType({{ $account->id }})">
+                                <i id="icon-{{ $account->id }}" class="fas fa-exchange-alt"></i>
+                                <span>{{ $account->isAdmin ? 'Admin' : 'Invité' }}</span>
+                            </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-warning btn-action" onclick="toggleType({{ $account->id }})">
-                                    <i class="fas fa-exchange-alt"></i> Changer Accès
-                                </button>
                                 <button class="btn btn-sm btn-outline-danger btn-action" onclick="disableAccount({{ $account->id }})">
                                     <i class="fas fa-ban"></i> Désactiver
                                 </button>
@@ -100,9 +122,10 @@
                                     <i class="fas fa-key"></i> Réinitialiser
                                 </button>
                                 <br>
-                                <small id="pwd-{{ $account->id }}" class="text-success fw-bold"></small>
+                                <small id="pwd-{{ $account->id }}" class="text-dark">
+                                    {{ $account->temp_password ? 'Mot de passe : ' . $account->temp_password : 'Aucun mot de passe temporaire' }}
+                                </small>
                             </td>
-                            
                         </tr>
                         @endforeach
                     </tbody>
@@ -114,79 +137,27 @@
 
 <!-- Toast de confirmation -->
 <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="liveToast" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header">
-            <strong class="me-auto">Succès</strong>
+            <i id="toast-icon" class="fas me-2"></i>
+            <strong id="toast-title" class="me-auto">Notification</strong>
             <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
         </div>
         <div class="toast-body" id="toast-message"></div>
     </div>
 </div>
 
-<script>
-    function showToast(message) {
-        document.getElementById('toast-message').innerText = message;
-        let toast = new bootstrap.Toast(document.getElementById('liveToast'));
-        toast.show();
-    }
+@section('modals')
 
-    function toggleType(id) {
-        fetch(`/toggle-type/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('type-' + id).innerText = data.newType;
-            showToast('Le type a été modifié avec succès.');
-        })
-        .catch(error => console.error('Erreur:', error));
-    }
+    @include('modals.manageModal')
 
-    function disableAccount(id) {
-        if (confirm('Voulez-vous vraiment désactiver ce compte ?')) {
-            fetch(`/disable-account/${id}`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(() => {
-                document.getElementById('row-' + id).remove();
-                showToast('Compte désactivé avec succès.');
-            })
-            .catch(error => console.error('Erreur:', error));
-        }
-    }
+@endsection
 
-    function resetPassword(id) {
-        fetch(`/reset-password/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.newPassword) {
-                document.getElementById('pwd-' + id).innerText = "Nouveau mot de passe : " + data.newPassword;
-                showToast('Mot de passe réinitialisé avec succès.');
-            } else {
-                showToast('Erreur : ' + data.error);
-            }
-        })
-        .catch(error => console.error('Erreur:', error));
-    }
 
-</script>
+@section('scripts')
+
+    @include('js.manageJs')
+
+@endsection
 
 @endsection

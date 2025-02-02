@@ -18,6 +18,7 @@ use \App\Http\Controllers\{
     AdminController
 };
 use App\Exports\ExampleExport;
+use App\Models\User;
 use Maatwebsite\Excel\Facades\Excel;
 
 /*
@@ -100,6 +101,12 @@ Route::middleware(['check.session'])->group(function () {
         Route::post('/toggle-type/{id}', [AdminController::class, 'toggleType'])->name('toggleType');
         Route::post('/disable-account/{id}', [AdminController::class, 'disableAccount'])->name('disableAccount');
         Route::post('/reset-password/{id}', [AdminController::class, 'resetPassword'])->name('resetPassword');
+        Route::post('/create-account', [AdminController::class, 'createAccount'])->name('createAccount');
+
+        Route::get('/check-login/{baseLogin}', function ($baseLogin) {
+            $count = User::where('login', 'like', $baseLogin . '%')->count();
+            return response()->json(['count' => $count]);
+        });
 
         // Route pour import données
         Route::get('/import', [ImportController::class, 'importView'])->name('import.view');

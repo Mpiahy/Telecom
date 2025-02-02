@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
         // Insère des utilisateurs de démonstration
         User::insert([
             [
-                'login' => 'example',
+                'login' => 'EXAMPLE',
                 'email' => 'example@example.com',
                 'password' => bcrypt('example'),
                 'nom_usr' => 'Example',
