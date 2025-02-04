@@ -78,6 +78,13 @@ Route::middleware(['check.session'])->group(function () {
         Route::get('/ligne', [LigneController::class, 'ligneView'])->name('ref.ligne');
         Route::get('/ligne/searchUser', [LigneController::class, 'searchUser'])->name('ligne.searchUser');
         Route::get('/ligne/detailLigne/{id_ligne}', [LigneController::class, 'detailLigne'])->name('ligne.detailLigne');
+
+        // Route pour récupérer l'historique des affectations d'une ligne
+        Route::get('/ligne/historiqueAffectations/{id}', [LigneController::class, 'getHistoriqueAffectations']);
+
+        // Route pour récupérer l'historique des opérations d'une ligne
+        Route::get('/ligne/historiqueOperations/{id}', [LigneController::class, 'getHistoriqueOperations']);
+
         Route::get('/ligne/histoLigne/{id_ligne}', [LigneController::class, 'histoLigne'])->name('ligne.histoLigne');
 
         Route::get('/fibre', [FibreController::class, 'fibreView'])->name('ref.fibre');
@@ -172,6 +179,12 @@ Route::middleware(['check.session'])->group(function () {
         Route::get('/ligne/edt', [LigneController::class, 'edtLigne'])->name('ligne.edt');
         Route::post('/ligne/rsl', [LigneController::class, 'rslLigne'])->name('ligne.rsl');
         Route::post('/ligne/react', [LigneController::class, 'reactLigne'])->name('ligne.react');
+
+        // Route pour récupérer les éléments d'un forfait
+        Route::get('/ligne/{id_ligne}/forfait/elements', [LigneController::class, 'getElementsByLigne'])->name('ligne.forfait.elements');
+    
+        // Route pour enregistrer un rajout de forfait
+        Route::post('/ligne/rajoutForfait', [LigneController::class, 'rajoutForfait'])->name('ligne.rajoutForfait');
 
         Route::post('/phone/save', [PhoneController::class, 'savePhone'])->name('phone.enr');
         Route::get('/phones/{id_phone}', [PhoneController::class, 'updatePhone'])->name('phone.edt');

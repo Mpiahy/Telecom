@@ -12,6 +12,10 @@ use App\Models\Ligne;
 use App\Models\StatutLigne;
 use App\Models\Utilisateur;
 use App\Models\Affectation;
+use App\Models\Operation;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class LigneController extends Controller
@@ -290,7 +294,7 @@ class LigneController extends Controller
     }
 
     // Historique de la ligne
-    public function histoLigne($id_ligne)
+    public function getHistoriqueAffectations($id_ligne)
     {
         $histoLigne = Ligne::getHistoriqueLigne($id_ligne);
 
@@ -302,4 +306,85 @@ class LigneController extends Controller
         return response()->json($histoLigne);
     }
 
+    /**
+     * Récupère les éléments disponibles pour un forfait donné
+     */
+    public function getElementsByLigne($id_ligne)
+    {
+        try {
+            // Récupérer l'ID du forfait associé à la ligne
+            $forfait = DB::table('view_ligne_big_details')
+                ->where('id_ligne', $id_ligne)
+                ->select('id_forfait')
+                ->first();
+
+            if (!$forfait) {
+                return response()->json(['error' => 'Ligne introuvable ou pas de forfait associé.'], 404);
+            }
+
+            // Récupérer les éléments associés à ce forfait
+            $elements = DB::table('view_element_prix')
+                ->where('id_forfait', $forfait->id_forfait)
+                ->select('id_element', 'libelle', 'quantite', 'unite', 'prix_unitaire_element', 'prix_total_element')
+                ->get();
+
+            if ($elements->isEmpty()) {
+                return response()->json(['message' => 'Aucun élément disponible pour ce forfait.'], 200);
+            }
+
+            return response()->json($elements);
+        } catch (Exception $e) {
+            Log::error('Erreur lors de la récupération des éléments du forfait : ' . $e->getMessage());
+            return response()->json(['error' => 'Une erreur est survenue, veuillez réessayer.'], 500);
+        }
+    }
+
+    /**
+     * Enregistre un rajout de forfait
+     */
+    public function rajoutForfait(Request $request)
+    {
+        // 🔍 Validation des données
+        $validator = Validator::make($request->all(), [
+            'id_ligne' => 'required|exists:ligne,id_ligne',
+            'id_element' => 'required|exists:element,id_element',
+            'debut_operation' => 'required|date',
+            'commentaire' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        // 🔥 Appel à la méthode `ajouterOperation()` du modèle
+        $success = Operation::ajouterOperation(
+            $request->id_ligne,
+            $request->id_element,
+            $request->debut_operation,
+            $request->commentaire
+        );
+
+        if ($success) {
+            return redirect()->back()->with('success', 'Forfait ajouté avec succès !');
+        } else {
+            return back()->with('error', 'Une erreur est survenue, veuillez réessayer.');
+        }
+    }
+
+    public function getHistoriqueOperations($id)
+    {
+        try {
+            $operations = DB::table('view_historique_operation')
+                ->where('id_ligne', $id)
+                ->orderBy('debut_operation', 'desc')
+                ->get();
+    
+            return response()->json($operations);
+            
+        } catch (Exception $e) {
+            Log::error("Erreur dans getHistoriqueOperations : " . $e->getMessage());
+            return response()->json(['error' => 'Erreur interne du serveur'], 500);
+        }
+    }    
+    
 }

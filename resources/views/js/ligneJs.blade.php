@@ -809,91 +809,201 @@
     });
 </script>
 
-{{-- Historique Affectation Ligne --}}
+{{-- Historique des Affectations et Opérations --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Sélectionne tous les boutons pour voir les détails
-        const histoLigneBtns = document.querySelectorAll('#btn_histo_ligne');
-    
-        // Ajoute un gestionnaire d'événements à chaque bouton
-        histoLigneBtns.forEach(btn => {
+        // Sélectionne tous les boutons liés à l'historique
+        const btnsHistorique = document.querySelectorAll('[data-btn-historique]');
+
+        // Gestionnaire d'événements pour chaque bouton d'historique
+        btnsHistorique.forEach(btn => {
             btn.addEventListener('click', function (event) {
-                event.preventDefault(); // Empêche la redirection normale
-    
-                // Récupère les informations depuis les attributs data-*
-                const idLigne = this.getAttribute('data-id-histo');
-                const sim = this.getAttribute('data-sim-histo') || '--';
-                const operateur = this.getAttribute('data-operateur-histo') || '--';
-    
-                // Remplit les champs du modal avec les informations générales
-                document.querySelector('#modal_histo_ligne .modal-body [data-field="sim"]').textContent = sim;
-                document.querySelector('#modal_histo_ligne .modal-body [data-field="operateur"]').textContent = operateur;
-    
-                // Appelle l'API pour récupérer l'historique d'affectation
-                fetch(`/ligne/histoLigne/${idLigne}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erreur lors de la récupération des données.');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Injecte l'historique d'affectation dans le tableau
-                        populateModal(data);
-    
-                        // Affiche le modal
-                        const modal = new bootstrap.Modal(document.getElementById('modal_histo_ligne'));
-                        modal.show();
-                    })
-                    .catch(error => {
-                        console.error('Erreur:', error);
-                        alert('Une erreur est survenue lors de la récupération des détails de cette ligne.');
-                    });
+                event.preventDefault(); // Empêche la redirection
+
+                // Récupération des informations depuis les attributs `data-*`
+                const idLigne = this.getAttribute('data-id-ligne');
+                const sim = this.getAttribute('data-sim') || '--';
+                const operateur = this.getAttribute('data-operateur') || '--';
+
+                // Mise à jour des champs du modal
+                document.querySelector('#modal_historique .modal-body [data-field="sim"]').textContent = sim;
+                document.querySelector('#modal_historique .modal-body [data-field="operateur"]').textContent = operateur;
+
+                // Récupérer et afficher les données
+                chargerHistoriqueAffectations(idLigne);
+                chargerHistoriqueOperations(idLigne);
+
+                // Affichage du modal
+                const modal = new bootstrap.Modal(document.getElementById('modal_historique'));
+                modal.show();
             });
         });
-    
-        // Fonction pour injecter les données d'historique dans le tableau
-        function populateModal(data) {
-            const tbody = document.querySelector('#modal_histo_ligne .modal-body #dataTable tbody');
-    
-            // Vide le tableau pour éviter d'afficher des données redondantes
+
+        /**
+         * Charge l'historique des affectations
+         */
+        function chargerHistoriqueAffectations(idLigne) {
+            fetch(`/ligne/historiqueAffectations/${idLigne}`)
+                .then(response => response.json())
+                .then(data => remplirTableau('#tableAffectations tbody', data, formatterAffectationRow, 9))
+                .catch(error => gestionErreur(error, 'affectations'));
+        }
+
+        /**
+         * Charge l'historique des opérations
+         */
+        function chargerHistoriqueOperations(idLigne) {
+            fetch(`/ligne/historiqueOperations/${idLigne}`)
+                .then(response => response.json())
+                .then(data => remplirTableau('#tableOperations tbody', data, formatterOperationRow, 7))
+                .catch(error => gestionErreur(error, 'opérations'));
+        }
+
+        /**
+         * Remplit un tableau HTML avec des données JSON
+         * @param {string} tableSelector - Sélecteur du tbody cible
+         * @param {Array} data - Données JSON
+         * @param {Function} formatter - Fonction de formatage des lignes
+         * @param {number} colspan - Nombre de colonnes pour le message "Aucune donnée"
+         */
+        function remplirTableau(tableSelector, data, formatter, colspan) {
+            const tbody = document.querySelector(tableSelector);
             tbody.innerHTML = '';
-    
+
             if (data && Array.isArray(data) && data.length > 0) {
-                data.forEach(item => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="text-dark">${item.nom || ''} ${item.prenom || ''}</td>
-                        <td class="text-dark">${item.login || '--'}</td>
-                        <td class="text-dark">${item.localisation || '--'}</td>
-                        <td class="text-dark">${item.num_ligne || '--'}</td>
-                        <td class="text-dark">${item.type_forfait || '--'}</td>
-                        <td class="text-dark">${item.forfait || '--'}</td>
-                        <td class="text-dark">${formatPrix(item.prix_forfait_ht)}</td>
-                        <td class="text-dark">${item.debut_affectation || '--'}</td>
-                        <td class="text-dark">${item.fin_affectation || '--'}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
+                data.forEach(item => tbody.appendChild(formatter(item)));
             } else {
-                // Aucun historique trouvé
-                const noDataRow = document.createElement('tr');
-                noDataRow.innerHTML = `
-                    <td class="text-dark text-center" colspan="9">Aucun historique disponible.</td>
-                `;
-                tbody.appendChild(noDataRow);
+                tbody.innerHTML = `<tr><td class="text-dark text-center" colspan="${colspan}">Aucune donnée disponible.</td></tr>`;
             }
         }
 
-        function formatPrix(prix) {
-            if (!prix) {
-                return '--'; // Retourne '--' si la valeur est absente ou 0
-            }
-            // Convertir en nombre et formater
-            return parseFloat(prix).toLocaleString('fr-FR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-            }) + ' MGA';
+        /**
+         * Formate une ligne d'affectation
+         */
+        function formatterAffectationRow(item) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="text-dark">${item.nom || ''} ${item.prenom || ''}</td>
+                <td class="text-dark">${item.login || '--'}</td>
+                <td class="text-dark">${item.localisation || '--'}</td>
+                <td class="text-dark">${item.num_ligne || '--'}</td>
+                <td class="text-dark">${item.type_forfait || '--'}</td>
+                <td class="text-dark">${item.forfait || '--'}</td>
+                <td class="text-dark">${formatterPrix(item.prix_forfait_ht)}</td>
+                <td class="text-dark">${item.debut_affectation || '--'}</td>
+                <td class="text-dark">${item.fin_affectation || '--'}</td>
+            `;
+            return row;
         }
+
+        /**
+         * Formate une ligne d'opération avec les nouvelles colonnes de prix après prorata
+         */
+        function formatterOperationRow(item) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="text-dark">${item.libelle || '--'}</td>
+                <td class="text-dark">${formatterQuantite(item.quantite_prorata, item.unite)}</td>
+                <td class="text-dark">${formatterPrix(item.prix_unitaire_element)}</td>
+                <td class="text-dark">${formatterPrix(item.prix_ht_prorata)}</td>
+                <td class="text-dark">${formatterPrix(item.prix_ht_remise_prorata)}</td>
+                <td class="text-dark">${item.debut_operation || '--'}</td>
+                <td class="text-dark">${item.fin_operation || '--'}</td>
+                <td class="text-dark">${item.commentaire || '--'}</td>
+            `;
+            return row;
+        }
+
+        /**
+         * Formate un prix en MGA
+         */
+        function formatterPrix(prix) {
+            return prix ? `${parseFloat(prix).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MGA` : '--';
+        }
+
+        /**
+         * Formate la quantité avec unité
+         */
+        function formatterQuantite(quantite, unite) {
+            if (!quantite) return '--';
+            return `${parseFloat(quantite).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${unite || ''}`;
+        }
+
+        /**
+         * Gestion des erreurs d'API
+         */
+        function gestionErreur(error, type) {
+            console.error(`Erreur lors de la récupération des ${type}:`, error);
+            alert(`Une erreur est survenue lors de la récupération des ${type}.`);
+        }
+    });
+</script>
+
+
+{{-- Rajout forfait --}}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("#btn_rajout_forfait").forEach(button => {
+        button.addEventListener("click", function () {
+            let ligneId = this.getAttribute("data-ligne-id");
+            let forfaitId = this.getAttribute("data-forfait-id");
+            let numLigne = this.getAttribute("data-ligne-num");
+            let nomForfait = this.getAttribute("data-forfait-nom");
+
+            document.getElementById("id_ligne_rajout").value = ligneId;
+            document.getElementById("num_ligne_rajout").value = numLigne;
+            document.getElementById("nom_forfait_rajout").value = nomForfait;
+
+            let selectElement = document.querySelector("select[name='id_element']");
+            let quantiteElement = document.getElementById("quantite_element");
+            let alertBox = document.getElementById("alert_no_elements");
+
+            selectElement.innerHTML = '<option value="">Chargement des éléments...</option>';
+            alertBox.style.display = "none";
+
+            fetch(`/ligne/${ligneId}/forfait/elements`)
+                .then(response => response.json())
+                .then(data => {
+                    selectElement.innerHTML = '';
+
+                    if (data.error) {
+                        console.error("Erreur :", data.error);
+                        selectElement.innerHTML = '<option value="">Erreur de chargement</option>';
+                    } else if (data.message) {
+                        alertBox.textContent = data.message;
+                        alertBox.style.display = "block";
+                        selectElement.innerHTML = '<option value="">Aucun élément disponible</option>';
+                    } else {
+                        selectElement.innerHTML = '<option value="">Sélectionner un élément</option>';
+                        data.forEach(element => {
+                            let option = document.createElement("option");
+                            option.value = element.id_element;
+                            option.dataset.quantite = element.quantite; // Stocke la quantité
+                            option.textContent = `${element.libelle} (${element.quantite} * ${element.unite}) - PU : ${element.prix_unitaire_element}Ar`;
+                            selectElement.appendChild(option);
+                        });
+
+                        // 🎯 Mettre à jour la quantité cachée lorsque l'utilisateur sélectionne un élément
+                        selectElement.addEventListener("change", function () {
+                            let selectedOption = selectElement.options[selectElement.selectedIndex];
+                            quantiteElement.value = selectedOption.dataset.quantite || 0;
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Erreur lors du chargement des éléments :", error);
+                    selectElement.innerHTML = '<option value="">Erreur de connexion</option>';
+                });
+        });
+    });
+});
+
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        @if ($errors->any())
+            let modal = new bootstrap.Modal(document.getElementById("modal_rajout_forfait"));
+            modal.show();
+        @endif
     });
 </script>

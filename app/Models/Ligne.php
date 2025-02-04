@@ -72,7 +72,6 @@ class Ligne extends Model
         return $query->paginate($perPage);
     }
 
-
     public static function getLignesWithBigDetails($id_ligne)
     {
         $sql = "SELECT * FROM view_ligne_big_details";

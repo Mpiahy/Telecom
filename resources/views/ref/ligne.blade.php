@@ -241,22 +241,16 @@
                                     <div class="d-flex justify-content-center gap-2">
                                         {{-- Boutons spécifiques au statut --}}
                                         @if ($ligne->statut_ligne === 'Resilie')
-                                            {{-- <a id="btn_react_ligne"
+                                            <a href="{{ url('/ligne/detailLigne/' . $ligne->id_ligne) }}"
+                                                id="btn_voir_ligne"
                                                 class="text-decoration-none"
                                                 style="margin-right: 5px;" 
-                                                data-bs-target="#modal_react_ligne" 
-                                                data-bs-toggle="modal" 
-                                                title="Réactiver" 
-                                                href="#"
-                                                data-sim-react="{{ $ligne->num_sim }}"
-                                                data-operateur-react="{{ $ligne->id_operateur }}"
-                                                data-operateur-email-react="{{ $ligne->contact_email }}"
-                                                data-operateur-name-react="{{ $ligne->nom_operateur }}"
-                                                data-type-react="{{ $ligne->id_type_ligne }}"
-                                                data-forfait-react="{{ $ligne->id_forfait }}" 
-                                                data-id-react="{{ $ligne->id_ligne }}">
-                                                <i class="far fa-arrow-alt-circle-up text-success" style="font-size: 25px;"></i>
-                                            </a> --}}
+                                                data-bs-target="#modal_voir_ligne" 
+                                                title="Plus d'information"
+                                                data-bs-toggle="modal"
+                                                data-id-voir="{{ $ligne->id_ligne }}">
+                                                <i class="fas fa-info-circle text-primary" style="font-size: 25px;"></i>
+                                            </a> 
                                         @elseif ($ligne->statut_ligne === 'Inactif' || $ligne->statut_ligne === 'En attente')    
                                             <a href="#"
                                                 id="btn_enr_ligne"
@@ -293,32 +287,34 @@
                                                 data-id-aff-resil="{{ $ligne->id_affectation }}"
                                                 data-id-resil="{{ $ligne->id_ligne }}">
                                                 <i class="far fa-window-close text-danger" style="font-size: 25px;"></i>
-                                            </a>                     
+                                            </a>
+                                            <a href="#" 
+                                                id="btn_rajout_forfait"
+                                                style="margin-right: 5px;"
+                                                class="text-decoration-none"
+                                                data-bs-target="#modal_rajout_forfait" 
+                                                data-bs-toggle="modal" 
+                                                title="Rajout forfait"
+                                                data-ligne-id="{{ $ligne->id_ligne }}"
+                                                data-forfait-id="{{ $ligne->id_forfait }}"
+                                                data-ligne-num="{{ $ligne->num_ligne }}"
+                                                data-forfait-nom="{{ $ligne->nom_forfait }}">
+                                                <i class="fas fa-plus-circle text-success" style="font-size: 25px;"></i>
+                                            </a>
                                         @endif
-                                        <a href="{{ url('/ligne/detailLigne/' . $ligne->id_ligne) }}"
-                                            id="btn_voir_ligne"
-                                            class="text-decoration-none"
-                                            style="margin-right: 5px;" 
-                                            data-bs-target="#modal_voir_ligne" 
-                                            title="Plus d'information"
-                                            data-bs-toggle="modal"
-                                            data-id-voir="{{ $ligne->id_ligne }}">
-                                            <i class="fas fa-info-circle text-primary" style="font-size: 25px;"></i>
-                                        </a> 
                                         {{-- Boutons en commun --}}
-                                        <a href="{{ url('/ligne/histoLigne/' . $ligne->id_ligne) }}"
-                                            id="btn_histo_ligne"
-                                            class="text-decoration-none"
+                                        <a href="#" 
+                                            class="text-decoration-none" 
                                             style="margin-right: 5px;" 
-                                            data-bs-target="#modal_histo_ligne" 
-                                            title="Historique"
-                                            data-bs-toggle="modal"
-                                            data-id-histo="{{ $ligne->id_ligne }}"
-                                            data-sim-histo="{{ $ligne->num_sim }}"
-                                            data-operateur-histo="{{ $ligne->nom_operateur }}"
-                                            >
-                                            <i class="fas fa-history text-primary" style="font-size: 25px;"></i>
-                                        </a>   
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modal_historique" 
+                                            data-btn-historique
+                                            data-id-ligne="{{ $ligne->id_ligne }}"
+                                            data-sim="{{ $ligne->num_sim }}"
+                                            data-operateur="{{ $ligne->nom_operateur }}"
+                                            title="Voir l'historique">
+                                                <i class="fas fa-history text-primary" style="font-size: 25px;"></i>
+                                        </a>
                                         <a href="#"
                                             id="btn_edt_ligne"
                                             class="text-decoration-none"

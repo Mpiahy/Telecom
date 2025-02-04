@@ -646,53 +646,151 @@
     </div>
 </div>
 
-<div id="modal_histo_ligne" class="modal fade" role="dialog" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-custom modal-dialog-centered modal-dialog-scrollable" role="document">
-        <div class="modal-content shadow-lg border-0">
+<!-- Modal Historique (Affectations & Opérations) -->
+<div id="modal_historique" class="modal fade" tabindex="-1" aria-labelledby="modal_historique_titre" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-custom modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0 rounded-3">
+            <!-- Header -->
             <div class="modal-header bg-primary text-white">
-                <h4 id="modalTitle" class="modal-title">Historique d'affectation pour cette ligne</h4>
+                <h4 id="modal_historique_titre" class="modal-title fw-bold">Historique d'affectation et opérations</h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
-            <div class="modal-body">
-                <!-- Détails du téléphone -->
-                <div class="mb-4">
+
+            <!-- Body -->
+            <div class="modal-body bg-light">
+                <!-- Détails de la ligne -->
+                <div class="mb-4 p-3 bg-white shadow-sm rounded text-dark">
                     <div class="row">
                         <div class="col">
-                            <p class="text-dark mb-1">
+                            <p class="mb-1">
                                 <span class="fw-bold">SIM :</span>
-                                <span class="fw-normal" data-field="sim"></span>
+                                <span data-field="sim"></span>
                             </p>
                         </div>
-                        <div class="col"> 
-                            <p class="text-dark mb-1">
+                        <div class="col">
+                            <p class="mb-1">
                                 <span class="fw-bold">Opérateur :</span>
-                                <span class="fw-normal" data-field="operateur"></span>
+                                <span data-field="operateur"></span>
                             </p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Table des affectations -->
-                <div class="table-responsive">
-                    <table id="dataTable" class="table table-bordered table-hover align-middle">
-                        <thead class="table-primary">
+                <h4 class="text-primary fw-bold">Historique des affectations</h4>
+                <div class="table-responsive bg-white shadow-sm rounded p-3">
+                    <table id="tableAffectations" class="table table-hover align-middle">
+                        <thead class="table-primary text-dark">
                             <tr>
-                                <th class="text-dark">Utilisateur</th>
-                                <th class="text-dark">Login</th>
-                                <th class="text-dark">Localisation</th>
-                                <th class="text-dark">Numéro Ligne</th>
-                                <th class="text-dark">Type</th>
-                                <th class="text-dark">Forfait</th>
-                                <th class="text-dark">Prix HT Mensuel</th>
-                                <th class="text-dark">Date d'affectation</th>
-                                <th class="text-dark">Date de retour</th>
+                                <th>Utilisateur</th>
+                                <th>Login</th>
+                                <th>Localisation</th>
+                                <th>Numéro Ligne</th>
+                                <th>Type</th>
+                                <th>Forfait</th>
+                                <th>Prix HT Mensuel</th>
+                                <th>Date d'affectation</th>
+                                <th>Date de retour</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Les lignes seront ajoutées dynamiquement ici -->
+                        <tbody class="table-light">
+                            <!-- Les données seront injectées ici via JavaScript -->
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Table des opérations -->
+                <h4 class="text-primary fw-bold mt-4">Historique des opérations</h4>
+                <div class="table-responsive bg-white shadow-sm rounded p-3">
+                    <table id="tableOperations" class="table table-hover align-middle">
+                        <thead class="table-primary text-dark">
+                            <tr>
+                                <th>Élément</th>
+                                <th>Quantité</th>
+                                <th>Prix Unitaire HT</th>
+                                <th>Prix HT mensuel après prorata</th>
+                                <th>Prix HT mensuel remisé après prorata</th>
+                                <th>Début Opération</th>
+                                <th>Fin Opération</th>
+                                <th>Commentaire</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-light">
+                            <!-- Les données seront injectées ici via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>                
             </div>
+
+            <!-- Footer -->
+            <div class="modal-footer bg-white">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour le rajout de forfait -->
+<div id="modal_rajout_forfait" class="modal" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title text-success">Demande de rajout de forfait</h4>
+                <button id="close_modal_act" class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('ligne.rajoutForfait') }}" method="POST" id="form_rajout_forfait">
+                @csrf
+                <div class="modal-body">
+                    <input type="hidden" name="id_ligne" id="id_ligne_rajout">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Numéro de ligne</label>
+                            <input type="text" class="form-control" id="num_ligne_rajout" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Forfait actuel</label>
+                            <input type="text" class="form-control" id="nom_forfait_rajout" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div id="alert_no_elements" class="alert alert-warning" style="display: none;">
+                            Aucun élément disponible pour ce forfait.
+                        </div>                        
+                        <div class="col-md-6">
+                            <label class="form-label">Élément à rajouter <span class="text-danger">*</span></label>
+                            <select class="form-select @error('id_element') is-invalid @enderror" name="id_element" required>
+                                <option value="">Sélectionner un élément</option>
+                            </select>
+                            <input type="hidden" name="quantite" id="quantite_element">
+                            @error('id_element')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date de début <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control @error('debut_operation') is-invalid @enderror" name="debut_operation" required>
+                            @error('debut_operation')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Commentaire</label>
+                        <textarea class="form-control @error('commentaire') is-invalid @enderror" name="commentaire" rows="3"></textarea>
+                        @error('commentaire')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+            
         </div>
     </div>
 </div>

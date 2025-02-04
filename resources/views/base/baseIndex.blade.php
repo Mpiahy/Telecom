@@ -11,59 +11,6 @@
     <link rel="stylesheet" href="{{asset('/assets/css/animate.min.css')}}">
 </head>
 
-<style>
-    :root {
-    --bs-primary: #0B4865 !important;
-    --bs-primary-rgb: 10, 72, 102 !important;
-}
-
-.btn-primary, .bg-primary {
-    background-color: #0B4865 !important;
-    border-color: #0B4865 !important;
-    color: white !important;
-}
-
-.btn-primary:hover {
-    background-color: #083a52 !important;
-    border-color: #083a52 !important;
-}
-
-.text-primary {
-    color: #0B4865 !important;
-}
-
-/* Ajouts pour l'outline */
-.btn-outline-primary {
-    color: #0B4865 !important;
-    border-color: #0B4865 !important;
-    background-color: transparent !important;
-}
-
-.btn-outline-primary:hover {
-    color: white !important;
-    background-color: #0B4865 !important;
-    border-color: #0B4865 !important;
-}
-
-.btn-outline-primary:focus, 
-.btn-outline-primary.focus {
-    box-shadow: 0 0 0 0.25rem rgba(10, 72, 102, 0.25) !important;
-}
-
-.btn-outline-primary.disabled, 
-.btn-outline-primary:disabled {
-    color: #0B4865 !important;
-    background-color: transparent !important;
-}
-
-.btn-outline-primary:not(:disabled):not(.disabled):active,
-.btn-outline-primary:not(:disabled):not(.disabled).active {
-    color: white !important;
-    background-color: #0B4865 !important;
-    border-color: #0B4865 !important;
-}
-</style>
-
 <body id="page-top">
     <div id="wrapper">
         <nav class="navbar navbar-dark align-items-start sidebar sidebar-dark accordion bg-gradient-primary p-0" style="color: var(--bs-accordion-active-color);background: rgb(10,72,102);">

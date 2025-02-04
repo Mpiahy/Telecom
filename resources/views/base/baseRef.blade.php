@@ -12,9 +12,6 @@
 </head>
 
 <style>
-
-
-
     /* Styles pour la modal */
 #modal_voir_ligne .modal-content {
     border-radius: 8px; /* Coins arrondis pour moderniser */
