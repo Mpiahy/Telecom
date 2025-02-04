@@ -937,6 +937,16 @@
             alert(`Une erreur est survenue lors de la récupération des ${type}.`);
         }
     });
+
+    document.getElementById('modal_historique').addEventListener('hidden.bs.modal', function () {
+        // Retire le backdrop manuellement
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        // Retire la classe modal-open du body
+        document.body.classList.remove('modal-open');
+    });
 </script>
 
 
