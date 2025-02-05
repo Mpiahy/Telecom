@@ -114,55 +114,22 @@ class SuiviFlotteExport implements FromArray, WithHeadings, WithTitle, WithColum
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-
-                // Rendre les colonnes B (num_sim) en texte
-                foreach ($sheet->getColumnIterator('B') as $column) {
-                    foreach ($column->getCellIterator() as $cell) {
-                        $cell->setDataType(DataType::TYPE_STRING);
-                    }
+                $highestRow = $sheet->getHighestRow();
+    
+                for ($row = 2; $row <= $highestRow; $row++) {
+                    $sheet->setCellValue("U$row", "=SUM(I$row:T$row)");
                 }
-
-                // Convertir les colonnes de prix (I à U) en type NUMERIC
-                $highestRow = $sheet->getHighestRow(); // Obtenir la dernière ligne des données
-                for ($col = ord('I'); $col <= ord('U'); $col++) { // Colonnes I à U
-                    $columnLetter = chr($col);
-                    for ($row = 2; $row <= $highestRow; $row++) { // Lignes de données (à partir de la ligne 2)
-                        $cell = $sheet->getCell($columnLetter . $row);
-                        $cellValue = $cell->getValue();
-                        
-                        // Convertir la valeur en numérique si possible
-                        if (is_numeric($cellValue)) {
-                            $cell->setValueExplicit((float)$cellValue, DataType::TYPE_NUMERIC);
-                        } else {
-                            $cell->setValue(0); // Si la cellule n'est pas un nombre, mettre 0
-                        }
-                    }
-                }
-
-                // Calcul automatique de la somme de la colonne "Total Annuel" (colonne U)
-                $highestRow = $sheet->getHighestRow(); // Obtenir la dernière ligne du tableau
-                $totalCell = 'U' . ($highestRow + 1); // Position de la cellule où afficher la somme
-
-                // Ajouter la formule de somme
-                $sheet->setCellValue(
-                    $totalCell,
-                    '=SUM(U2:U' . $highestRow . ')' // Formule pour sommer toutes les lignes de la colonne U
-                );
-
-                // Appliquer un style à la cellule de la somme
+    
+                $totalCell = 'U' . ($highestRow + 1);
+                $sheet->setCellValue($totalCell, "=SUM(U2:U$highestRow)");
+    
                 $sheet->getStyle($totalCell)->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                    ],
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT,
-                    ],
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FF0000']],
+                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT],
+                    'numberFormat' => ['formatCode' => '#,##0.00 "Ar"'],
                 ]);
-
-                // Appliquer un format comptabilité à la cellule
-                $sheet->getStyle($totalCell)->getNumberFormat()->setFormatCode('### ### ### ### ###.00 "Ar"');
             },
         ];
     }
-
+    
 }

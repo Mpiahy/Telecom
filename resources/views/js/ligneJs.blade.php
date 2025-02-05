@@ -903,10 +903,10 @@
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="text-dark">${item.libelle || '--'}</td>
-                <td class="text-dark">${formatterQuantite(item.quantite_prorata, item.unite)}</td>
-                <td class="text-dark">${formatterPrix(item.prix_unitaire_element)}</td>
-                <td class="text-dark">${formatterPrix(item.prix_ht_prorata)}</td>
-                <td class="text-dark">${formatterPrix(item.prix_ht_remise_prorata)}</td>
+                <td class="text-dark text-end">${formatterQuantite(item.quantite_prorata, item.unite)}</td>
+                <td class="text-dark text-end">${formatterPrix(item.prix_unitaire_element)}</td>
+                <td class="text-dark text-end">${formatterPrix(item.prix_ht_prorata)}</td>
+                <td class="text-dark text-end">${formatterPrix(item.prix_ht_remise_prorata)}</td>
                 <td class="text-dark">${item.debut_operation || '--'}</td>
                 <td class="text-dark">${item.fin_operation || '--'}</td>
                 <td class="text-dark">${item.commentaire || '--'}</td>

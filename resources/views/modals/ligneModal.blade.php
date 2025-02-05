@@ -706,10 +706,10 @@
                         <thead class="table-primary text-dark">
                             <tr>
                                 <th>Élément</th>
-                                <th>Quantité</th>
-                                <th>Prix Unitaire HT</th>
-                                <th>Prix HT mensuel après prorata</th>
-                                <th>Prix HT mensuel remisé après prorata</th>
+                                <th class="text-end">Quantité</th>
+                                <th class="text-end">Prix Unitaire HT</th>
+                                <th class="text-end">Prix HT mensuel après prorata</th>
+                                <th class="text-end">Prix HT mensuel remisé après prorata</th>
                                 <th>Début Opération</th>
                                 <th>Fin Opération</th>
                                 <th>Commentaire</th>

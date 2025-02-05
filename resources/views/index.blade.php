@@ -2,10 +2,34 @@
 
 <head>
     <title>Tableau de bord - Telecom</title>
+    <link rel="stylesheet" href="{{ asset('assets/css/jquery.dataTables.min.css') }}">
 </head>
 
+<style>
+    .kpi-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 10px;
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .display-5 {
+        font-size: 2.5rem;
+    }
+</style>
+
+
 @section('content_index')
-<!-- Affichage du message d'erreur si présent dans la session -->
+
+<!-- Message d'erreur -->
 @if (session('error'))
     <div id="error-message" style="
         position: fixed;
@@ -26,14 +50,9 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Sélectionne l'élément du message d'erreur
         const errorMessage = document.getElementById('error-message');
-        
         if (errorMessage) {
-            // Affiche le message d'erreur
             errorMessage.style.display = 'block';
-
-            // Masque le message après 5 secondes
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 5000);
@@ -42,46 +61,93 @@
 </script>
 
 <div class="container-fluid">
-    <!-- Titre principal -->
+    <!-- Titre -->
     <div class="d-sm-flex justify-content-between align-items-center mb-4">
         <h3 class="text-dark mb-0"><i class="fas fa-tachometer-alt"></i> Tableau de Bord</h3>
     </div>
 
+    <!-- KPIs améliorés -->
+    <div class="row text-center">
+        <div class="col-lg-3 col-md-6">
+            <div class="card kpi-card bg-primary text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-phone-alt me-2"></i> Lignes Actives</h5>
+                    <p class="display-5 fw-bold">{{ $ligneActif ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card kpi-card bg-warning text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-exclamation-circle me-2"></i> Lignes Inactives</h5>
+                    <p class="display-5 fw-bold">{{ $ligneInactif ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card kpi-card bg-secondary text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-ban me-2"></i> Lignes Résiliées</h5>
+                    <p class="display-5 fw-bold">{{ $ligneResilie ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card kpi-card bg-info text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-hourglass-half me-2"></i> Lignes en Attente</h5>
+                    <p class="display-5 fw-bold">{{ $ligneEnAttente ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row text-center mt-3">
+        <div class="col-lg-4 col-md-6">
+            <div class="card kpi-card bg-secondary text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-laptop-house me-2"></i> Équipements Inactifs</h5>
+                    <p class="display-5 fw-bold">{{ $equipementInactif ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="card kpi-card bg-success text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-check-circle me-2"></i> Équipements Actifs</h5>
+                    <p class="display-5 fw-bold">{{ $equipementActif ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="card kpi-card bg-danger text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-times-circle me-2"></i> Équipements HS</h5>
+                    <p class="display-5 fw-bold">{{ $equipementHS ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Formulaire de filtrage -->
-    <form method="GET" action="{{ route('index') }}" class="mb-4">
+    <form method="GET" action="{{ route('index') }}" class="mt-4">
         <div class="row g-3 align-items-end">
-            <!-- Sélection de l'année -->
             <div class="col-md-3">
                 <label for="annee" class="form-label">Année :</label>
-                <input 
-                    type="number" 
-                    name="annee" 
-                    id="annee" 
-                    class="form-control" 
-                    placeholder="Ex : 2024" 
-                    value="{{ request('annee', date('Y')) }}" 
-                    min="2000" 
-                    max="{{ date('Y') }}" 
-                    required>
+                <input type="number" name="annee" id="annee" class="form-control" value="{{ request('annee', date('Y')) }}" min="2000" max="{{ date('Y') }}" required>
             </div>
-
-            <!-- Bouton de validation -->
             <div class="col-md-3">
                 <button type="submit" class="btn btn-primary">Afficher les chiffres</button>
             </div>
         </div>
     </form>
 
-    <!-- Affichage des graphiques et des données -->
-    <div class="row mb-5">
+    <!-- Graphiques -->
+    <div class="row my-5">
         <div class="col-md-12">
             @if($monthlyData)
-                <!-- Graphique pour les données mensuelles -->
-                <h4 class="text-dark text-center mb-4">Tableau de bord Telecom {{ $selectedYear }}</h4>
-                <div class="d-flex justify-content-center">
-                    <canvas id="monthlyChart" class="w-100" style="max-width: 100%; height: 500px;"></canvas>
-                </div>
-
+                <h4 class="text-center">Dépenses Télécoms {{ $selectedYear }}</h4>
+                <canvas id="evolutionChart" class="w-100" style="height: 400px;"></canvas>
                 <!-- Boutons d'exportation -->
                 <div class="d-flex justify-content-center mt-4 gap-2">
                     <a href="{{ route('export.pdf', ['annee' => request('annee')]) }}" class="btn btn-outline-danger">
@@ -94,131 +160,168 @@
                         <i class="fas fa-file-excel me-2"></i> Export SUIVI FLOTTE XLSX
                     </a>                    
                 </div>
-
-            @elseif(is_array($totalPrixForfaitHT) && isset($totalPrixForfaitHT['total_prix_forfait_ht']))
-                <!-- Affichage du total pour un mois donné -->
-                <div class="card shadow border-0">
-                    <div class="card-body text-center">
-                        <h4 class="text-dark mb-4 fw-bold">
-                            Total pour {{ $totalPrixForfaitHT['mois'] }} {{ $selectedYear }}
-                        </h4>
-                        <div class="alert alert-success text-center p-4" role="alert">
-                            <span class="fw-bold h4">
-                                {{ number_format($totalPrixForfaitHT['total_prix_forfait_ht'], 2, ',', ' ') }} MGA
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
             @else
-                <!-- Message si aucune donnée n'est disponible -->
-                <div class="card shadow-sm border-warning">
-                    <div class="card-body text-center">
-                        <div class="alert alert-warning text-center p-4" role="alert">
-                            <h5 class="text-dark fw-bold mb-3">Aucune donnée disponible</h5>
-                            <p class="mb-0">
-                                Aucun résultat pour la période sélectionnée. Veuillez essayer une autre période ou vérifier les paramètres.
-                            </p>
-                        </div>
-                    </div>
+                <div class="alert alert-warning text-center">
+                    <h5>Aucune donnée disponible</h5>
+                    <p>Essayez une autre période ou vérifiez les paramètres.</p>
                 </div>
             @endif
         </div>
     </div>
 
-    <!-- Section des graphiques (Lignes et Équipements) -->
+    <!-- Graphiques circulaires -->
     <div class="row mt-5">
-        <div class="col-md-6 chart-container">
+        <div class="col-md-6 text-center">
+            <h5>État des Lignes</h5>
             <canvas id="ligneChart"></canvas>
         </div>
-        <div class="col-md-6 chart-container">
+        <div class="col-md-6 text-center">
+            <h5>État des Équipements</h5>
             <canvas id="equipementChart"></canvas>
-            <!-- Bouton d'exportation pour Équipements -->
-            <div class="d-flex justify-content-center mt-4">
-                <a href="{{ route('export.equipement.xlsx') }}" class="btn btn-outline-success">
-                    <i class="fas fa-file-excel me-2"></i> Export XLSX
-                </a>
-            </div>
+        </div>
+    </div>
+
+    <!-- Tableau des données avec meilleur design -->
+    <div class="mt-5">
+        <h4 class="text-center">Détails des Dépenses</h4>
+        <div class="table-responsive">
+            <table id="dataTable" class="table table-hover table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center">Mois</th>
+                        <th class="text-center">Total Forfait HT (MGA)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($monthlyData as $data)
+                        <tr>
+                            <td class="text-center">{{ $data['mois'] }}</td>
+                            <td class="text-center fw-bold">{{ number_format($data['total_prix_forfait_ht'], 2, ',', ' ') }} MGA</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 
 </div>
 
-<!-- Scripts pour les graphiques -->
+<!-- Scripts -->
 <script src="{{ asset('assets/js/chart.js') }}"></script>
+<script src="{{ asset('assets/js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ asset('assets/js/jquery.dataTables.min.js') }}"></script>
 <script>
-    // Graphique des chiffres mensuels
-    const moisFrancais = [
-        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-    ];
+    $(document).ready(function () {
+        $('#dataTable').DataTable({
+            "paging": false,        // ❌ Supprime la pagination
+            "info": false,          // ❌ Supprime "X résultats"
+            "searching": false,     // ❌ Supprime la barre de recherche
+            "ordering": true,       // ✅ Garde le tri des colonnes activé
+            "lengthChange": false,  // ❌ Supprime l'option de changer le nombre d'éléments par page
+            "language": {
+                "emptyTable": "Aucune donnée disponible",
+                "zeroRecords": "Aucun résultat trouvé"
+            }
+        });
+    });
+    $(document).ready( function () {
+        $('#dataTable').DataTable();
+    });
 
     @if($monthlyData)
-        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-        new Chart(monthlyCtx, {
-            type: 'bar',
+        const evolutionCtx = document.getElementById('evolutionChart').getContext('2d');
+        new Chart(evolutionCtx, {
+            type: 'line',
             data: {
-                labels: moisFrancais,
+                labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'],
                 datasets: [{
-                    label: 'Total Prix Forfait HT (MGA)',
+                    label: 'Dépenses Télécom (MGA)',
                     data: @json(array_column($monthlyData, 'total_prix_forfait_ht')),
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    fill: true
                 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true } }
             }
         });
     @endif
 
-    // Graphique des lignes
-    const ligneCtx = document.getElementById('ligneChart').getContext('2d');
-    new Chart(ligneCtx, {
+    // Graphique Doughnut - État des Lignes
+    new Chart(document.getElementById('ligneChart'), {
         type: 'doughnut',
         data: {
-            labels: ['Lignes Actifs', 'Lignes Inactifs', 'Lignes Résiliés', 'Lignes en Attente'],
+            labels: ['Actifs', 'Inactifs', 'Résiliés', 'En Attente'],
             datasets: [{
                 data: [{{ $ligneActif ?? 0 }}, {{ $ligneInactif ?? 0 }}, {{ $ligneResilie ?? 0 }}, {{ $ligneEnAttente ?? 0 }}],
-                backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(255, 159, 64, 0.6)', 'rgba(255, 0, 0, 0.6)', 'rgba(54, 162, 235, 0.6)']
+                backgroundColor: ['#4CAF50', '#FFB74D', '#E57373', '#64B5F6'], // Couleurs plus douces
+                borderColor: '#ffffff', // Bordure blanche
+                borderWidth: 2
             }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
     });
 
-    // Graphique des équipements
-    const equipementCtx = document.getElementById('equipementChart').getContext('2d');
-    new Chart(equipementCtx, {
+    // Graphique Doughnut - État des Équipements
+    new Chart(document.getElementById('equipementChart'), {
         type: 'doughnut',
         data: {
-            labels: ['Équipements Actifs', 'Équipements Inactifs', 'Équipements HS'],
+            labels: ['Actifs', 'Inactifs', 'HS'],
             datasets: [{
                 data: [{{ $equipementActif ?? 0 }}, {{ $equipementInactif ?? 0 }}, {{ $equipementHS ?? 0 }}],
-                backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(255, 159, 64, 0.6)', 'rgba(255, 0, 0, 0.6)']
+                backgroundColor: ['#66BB6A', '#FFCA28', '#EF5350'], // Couleurs plus agréables
+                borderColor: '#ffffff',
+                borderWidth: 2
             }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
     });
 </script>
 
-<!-- Styles CSS -->
 <style>
     .chart-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 20px auto;
-        width: 100%; 
-        max-width: 400px; /* Taille maximale du graphique */
-        height: 400px;
+        width: 100%;
+        max-width: 300px; /* Réduit la taille max */
+        margin: auto;
     }
 
     canvas {
         max-width: 100%;
-        max-height: 100%;
+        max-height: 300px; /* Fixe une hauteur max */
     }
+
+    /* Appliquer un fond légèrement gris sur les lignes impaires */
+    #dataTable tbody tr:nth-child(odd) {
+        background-color: #f9f9f9;
+    }
+
+    /* Espacement et bordures douces */
+    .table-hover tbody tr:hover {
+        background-color: #e9ecef !important;
+    }
+
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #dee2e6 !important;
+    }
+
+    /* Titre stylisé */
+    h4 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
 </style>
 @endsection

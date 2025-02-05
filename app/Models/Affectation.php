@@ -133,20 +133,6 @@ class Affectation extends Model
     {
         Carbon::setLocale('fr');
     
-        // Récupération des affectations
-        $results = DB::table('affectation as a')
-            ->join('ligne as l', 'a.id_ligne', '=', 'l.id_ligne')
-            ->join('view_forfait_prix as vfp', 'l.id_forfait', '=', 'vfp.id_forfait')
-            ->selectRaw("
-                a.debut_affectation,
-                a.fin_affectation,
-                vfp.prix_forfait_ht,
-                vfp.prix_jour
-            ")
-            ->whereYear('a.debut_affectation', '<=', $annee)
-            ->whereRaw("a.fin_affectation IS NULL OR EXTRACT(YEAR FROM a.fin_affectation) >= ?", [$annee])
-            ->get();
-    
         // Initialisation des mois avec des montants à 0
         $months = [];
         for ($mois = 1; $mois <= 12; $mois++) {
@@ -156,84 +142,16 @@ class Affectation extends Model
             ];
         }
     
-        // Parcours des affectations
-        foreach ($results as $result) {
-            $debut = Carbon::parse($result->debut_affectation);
-            $fin = $result->fin_affectation ? Carbon::parse($result->fin_affectation) : null;
-            $prixForfait = $result->prix_forfait_ht;
-            $prixJour = $result->prix_jour;
-    
-            $premierMoisFacture = null;
-    
-            for ($mois = 1; $mois <= 12; $mois++) {
-                $debutMois = Carbon::create($annee, $mois, 1)->startOfMonth();
-                $finMois = Carbon::create($annee, $mois, 1)->endOfMonth();
-    
-                // Exclure les mois hors période d'affectation
-                if ($debut->gt($finMois) || ($fin && $fin->lt($debutMois))) {
-                    continue;
-                }
-    
-                // Définir le premier mois de facturation
-                if ($premierMoisFacture === null && $debut->year == $annee && $debut->month == $mois) {
-                    $premierMoisFacture = $mois;
-                    continue; // Le premier mois n'est pas facturé
-                }
-    
-                $montant = $prixForfait; // Par défaut, le mois est facturé en entier
-    
-                // Prorata du mois d'entrée (au deuxième mois seulement)
-                if ($premierMoisFacture !== null && $mois == $premierMoisFacture + 1) {
-                    $joursActifsPremierMois = 30 - $debut->day + 1;
-                    $montant += $joursActifsPremierMois * $prixJour;
-                }
-    
-                // Gestion des résiliations en milieu de mois
-                if ($fin && $fin->year == $annee && $fin->month == $mois && $fin->day < 30) {
-                    $joursNonUtilises = 30 - $fin->day + 1;
-                    $remboursement = $joursNonUtilises * $prixJour;
-    
-                    // Appliquer le remboursement au mois suivant
-                    if (isset($months[$mois + 1])) {
-                        $months[$mois + 1]['total_prix_forfait_ht'] -= round($remboursement, 2);
-                    }
-                }
-    
-                $months[$mois]['total_prix_forfait_ht'] += round($montant, 2);
-            }
-        }
-    
-        return $months;
-    }    
-    
-    public static function getYearlyData($annee)
-    {
-        Carbon::setLocale('fr');
-    
-        $typesLigne = DB::table('type_ligne')->pluck('type_ligne')->toArray();
-        $data = [];
-    
-        // Initialisation des données pour chaque type de ligne
-        foreach ($typesLigne as $type) {
-            for ($mois = 1; $mois <= 12; $mois++) {
-                $data[$type][$mois] = [
-                    'mois' => Carbon::create($annee, $mois, 1)->translatedFormat('F'),
-                    'total_prix_forfait_ht' => 0,
-                ];
-            }
-            $data[$type]['total_annuel'] = 0;
-        }
-    
+        // Récupération des affectations
         $results = DB::table('affectation as a')
             ->join('ligne as l', 'a.id_ligne', '=', 'l.id_ligne')
-            ->join('type_ligne as tl', 'l.id_type_ligne', '=', 'tl.id_type_ligne')
             ->join('view_forfait_prix as vfp', 'l.id_forfait', '=', 'vfp.id_forfait')
             ->selectRaw("
+                l.id_ligne,
                 a.debut_affectation,
                 a.fin_affectation,
                 vfp.prix_forfait_ht,
-                vfp.prix_jour,
-                tl.type_ligne
+                vfp.prix_jour
             ")
             ->whereYear('a.debut_affectation', '<=', $annee)
             ->whereRaw("a.fin_affectation IS NULL OR EXTRACT(YEAR FROM a.fin_affectation) >= ?", [$annee])
@@ -244,7 +162,6 @@ class Affectation extends Model
             $fin = $result->fin_affectation ? Carbon::parse($result->fin_affectation) : null;
             $prixForfait = $result->prix_forfait_ht;
             $prixJour = $result->prix_jour;
-            $type = $result->type_ligne;
     
             $premierMoisFacture = null;
     
@@ -277,49 +194,165 @@ class Affectation extends Model
                     $remboursement = $joursNonUtilises * $prixJour;
     
                     // Appliquer le remboursement au mois suivant
+                    if (isset($months[$mois + 1])) {
+                        $months[$mois + 1]['total_prix_forfait_ht'] -= round($remboursement, 2);
+                    }
+                }
+    
+                $months[$mois]['total_prix_forfait_ht'] += round($montant, 2);
+            }
+        }
+    
+        // 🔹 Ajout des coûts des opérations sur le mois suivant
+        $operations = DB::table('view_historique_operation')
+            ->whereYear('debut_operation', $annee)
+            ->get();
+    
+        foreach ($operations as $operation) {
+            $moisOperation = Carbon::parse($operation->debut_operation)->month;
+            $moisFacturation = $moisOperation + 1; // Facturation le mois suivant
+    
+            if ($moisFacturation > 12) {
+                continue; // Ne pas dépasser décembre
+            }
+    
+            $months[$moisFacturation]['total_prix_forfait_ht'] += round($operation->prix_ht_remise_prorata, 2);
+        }
+    
+        return $months;
+    }
+    
+    public static function getYearlyData($annee)
+    {
+        Carbon::setLocale('fr');
+    
+        $typesLigne = DB::table('type_ligne')->pluck('type_ligne')->toArray();
+        $data = [];
+    
+        // Initialisation des données pour chaque type de ligne
+        foreach ($typesLigne as $type) {
+            for ($mois = 1; $mois <= 12; $mois++) {
+                $data[$type][$mois] = [
+                    'mois' => Carbon::create($annee, $mois, 1)->translatedFormat('F'),
+                    'total_prix_forfait_ht' => 0,
+                ];
+            }
+        }
+    
+        // 🔹 1. Récupération des forfaits de base
+        $forfaits = DB::table('affectation as a')
+            ->join('ligne as l', 'a.id_ligne', '=', 'l.id_ligne')
+            ->join('type_ligne as tl', 'l.id_type_ligne', '=', 'tl.id_type_ligne')
+            ->join('view_forfait_prix as vfp', 'l.id_forfait', '=', 'vfp.id_forfait')
+            ->selectRaw("
+                l.id_ligne,
+                a.debut_affectation,
+                a.fin_affectation,
+                vfp.prix_forfait_ht,
+                vfp.prix_jour,
+                tl.type_ligne
+            ")
+            ->whereYear('a.debut_affectation', '<=', $annee)
+            ->whereRaw("a.fin_affectation IS NULL OR EXTRACT(YEAR FROM a.fin_affectation) >= ?", [$annee])
+            ->get();
+    
+        foreach ($forfaits as $forfait) {
+            $debut = Carbon::parse($forfait->debut_affectation);
+            $fin = $forfait->fin_affectation ? Carbon::parse($forfait->fin_affectation) : null;
+            $prixForfait = $forfait->prix_forfait_ht;
+            $prixJour = $forfait->prix_jour;
+            $type = $forfait->type_ligne;
+    
+            $premierMoisFacture = null;
+    
+            for ($mois = 1; $mois <= 12; $mois++) {
+                $debutMois = Carbon::create($annee, $mois, 1)->startOfMonth();
+                $finMois = Carbon::create($annee, $mois, 1)->endOfMonth();
+    
+                if ($debut->gt($finMois) || ($fin && $fin->lt($debutMois))) {
+                    continue;
+                }
+    
+                $montant = $prixForfait;
+    
+                if ($premierMoisFacture === null && $debut->year == $annee && $debut->month == $mois) {
+                    $premierMoisFacture = $mois;
+                    continue;
+                }
+    
+                if ($premierMoisFacture !== null && $mois == $premierMoisFacture + 1) {
+                    $joursActifsPremierMois = 30 - $debut->day + 1;
+                    $montant += $joursActifsPremierMois * $prixJour;
+                }
+    
+                if ($fin && $fin->year == $annee && $fin->month == $mois && $fin->day < 30) {
+                    $joursNonUtilises = 30 - $fin->day + 1;
+                    $remboursement = $joursNonUtilises * $prixJour;
+    
                     if (isset($data[$type][$mois + 1])) {
                         $data[$type][$mois + 1]['total_prix_forfait_ht'] -= round($remboursement, 2);
                     }
                 }
     
                 $data[$type][$mois]['total_prix_forfait_ht'] += round($montant, 2);
-                $data[$type]['total_annuel'] += round($montant, 2);
             }
         }
     
-        // Calcul des totaux globaux
-        $totauxParMois = [];
-        for ($mois = 1; $mois <= 12; $mois++) {
-            $totauxParMois[$mois] = [
-                'mois' => Carbon::create($annee, $mois, 1)->translatedFormat('F'),
-                'total_prix_forfait_ht' => 0, // Initialisation à 0
-            ];
-        }
-        $totauxParMois['total_annuel'] = 0;
-
-        // Recalcul des totaux pour chaque mois et chaque type
-        foreach ($data as $type => $moisData) {
-            // Ignorer les totaux globaux existants (éviter les erreurs de double comptage)
-            if ($type === 'Total') {
+        // 🔹 2. Ajout des coûts des opérations dans le mois suivant
+        $operations = DB::table('view_historique_operation as op')
+            ->join('ligne as l', 'op.id_ligne', '=', 'l.id_ligne')
+            ->join('type_ligne as tl', 'l.id_type_ligne', '=', 'tl.id_type_ligne')
+            ->selectRaw("
+                op.debut_operation,
+                op.prix_ht_remise_prorata,
+                tl.type_ligne
+            ")
+            ->whereYear('op.debut_operation', $annee)
+            ->get();
+    
+        foreach ($operations as $operation) {
+            $moisOperation = Carbon::parse($operation->debut_operation)->month;
+            $moisFacturation = $moisOperation + 1;
+    
+            if ($moisFacturation > 12) {
                 continue;
             }
-
-            // Additionner les montants pour chaque mois
+    
+            $data[$operation->type_ligne][$moisFacturation]['total_prix_forfait_ht'] += round($operation->prix_ht_remise_prorata, 2);
+        }
+    
+        // 🔹 3. Correction du total annuel (somme des 12 mois)
+        foreach ($data as $type => $moisData) {
+            $totalAnnuel = 0;
             for ($mois = 1; $mois <= 12; $mois++) {
-                $totauxParMois[$mois]['total_prix_forfait_ht'] += $moisData[$mois]['total_prix_forfait_ht'];
+                $totalAnnuel += $moisData[$mois]['total_prix_forfait_ht'];
             }
+            $data[$type]['total_annuel'] = round($totalAnnuel, 2);
         }
-
-        // Calcul du total annuel global basé sur les nouveaux totaux mensuels
+    
+        // 🔹 4. Ajout du "Total Général" (somme de tous les types)
+        $data['Total Général'] = [];
         for ($mois = 1; $mois <= 12; $mois++) {
-            $totauxParMois['total_annuel'] += $totauxParMois[$mois]['total_prix_forfait_ht'];
+            $moisTotal = 0;
+            foreach ($data as $type => $moisData) {
+                if ($type !== 'Total Général') {
+                    $moisTotal += $moisData[$mois]['total_prix_forfait_ht'];
+                }
+            }
+            $data['Total Général'][$mois] = [
+                'mois' => Carbon::create($annee, $mois, 1)->translatedFormat('F'),
+                'total_prix_forfait_ht' => round($moisTotal, 2),
+            ];
         }
-
-        // Ajout des totaux recalculés dans les données
-        $data['Total'] = $totauxParMois;
+    
+        // 🔹 5. Calcul du total général annuel
+        $grandTotalAnnuel = 0;
+        for ($mois = 1; $mois <= 12; $mois++) {
+            $grandTotalAnnuel += $data['Total Général'][$mois]['total_prix_forfait_ht'];
+        }
+        $data['Total Général']['total_annuel'] = round($grandTotalAnnuel, 2);
     
         return $data;
     }
-    
-
+      
 }
